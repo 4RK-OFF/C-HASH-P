@@ -39,3 +39,20 @@ jobs:
           exit 1
         fi
         echo "✅ ChM-2.txt files are identical."
+
+    - name: Extract ChM-HASH and write to report
+      run: |
+        echo "🔍 Extracting ChM-HASH from ChM-2.txt..."
+
+        HASH_LINE=$(grep '^ChM-HASH:' source/messages/ChM-2.txt || true)
+
+        if [ -z "$HASH_LINE" ]; then
+          echo "::error ::No ChM-HASH found in source/messages/ChM-2.txt"
+          exit 1
+        fi
+
+        echo "File: ChM-2.txt" > verify-report.txt
+        echo "$HASH_LINE" >> verify-report.txt
+
+        echo "--- Verify Report ---"
+        cat verify-report.txt
