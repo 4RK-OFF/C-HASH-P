@@ -13,12 +13,14 @@ jobs:
       with:
         repository: 4RK-OFF/C-HASH-P
         path: source
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Checkout mirror repo (SIG3)
       uses: actions/checkout@v3
       with:
         repository: 4RK-OFF/universe.dao-sig3
         path: mirror
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: List files in both repos
       run: |
@@ -51,8 +53,21 @@ jobs:
           exit 1
         fi
 
-        echo "File: ChM-2.txt" > verify-report.txt
-        echo "$HASH_LINE" >> verify-report.txt
+        mkdir -p verify
+        echo "File: ChM-2.txt" > verify/verify-report.txt
+        echo "$HASH_LINE" >> verify/verify-report.txt
 
         echo "--- Verify Report ---"
-        cat verify-report.txt
+        cat verify/verify-report.txt
+
+    - name: Commit and push verify report
+      run: |
+        cd source
+        git config --global user.name "chm-verifier"
+        git config --global user.email "chm-bot@users.noreply.github.com"
+        cp ../verify/verify-report.txt verify/verify-report.txt
+        git add verify/verify-report.txt
+        git commit -m "Add ChM verify report [auto]" || echo "No changes to commit"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
