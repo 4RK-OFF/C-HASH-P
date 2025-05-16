@@ -1,0 +1,13 @@
+ID: ChM-2
+
+ChM-HASH: af909570cd6839b172f3a694e6816d89d29dc92d4ab9224118c89cbc64a8f822
+
+C-HASH: 5e8554169f139a1a95b82a808b1bbe6b7e4d3216c72e0415db25ab3dffa845f4
+
+Message:
+TEST2, Proposal to enter Phase 2 of UNIVERSE.DAO-SIG.
+Phase 2 enables multisig identity verification on each channel (ETH, BTC, GitHub),
+increasing quorum complexity and security.
+
+UNIVERSE.DAO ChM-2
+CHP-v1: 5e8554169f139a1a95b82a808b1bbe6b7e4d3216c72e0415db25ab3dffa845f4
