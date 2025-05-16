@@ -2,8 +2,6 @@ name: Verify ChM Mirror
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 * * * *'  # Runs every hour
 
 jobs:
   verify-mirror:
@@ -22,11 +20,22 @@ jobs:
         repository: 4RK-OFF/universe.dao-sig3
         path: mirror
 
+    - name: List files in both repos
+      run: |
+        echo "SOURCE:"
+        ls -l source/messages/
+        echo "MIRROR:"
+        ls -l mirror/messages/
+
     - name: Compare ChM-2.txt files
       run: |
         echo "Comparing ChM-2.txt from both repos..."
-        diff source/messages/ChM-2.txt mirror/messages/ChM-2.txt || {
-          echo "::error ::Mismatch found in ChM-2.txt between repos.";
-          exit 1;
-        }
+        if ! diff -u source/messages/ChM-2.txt mirror/messages/ChM-2.txt; then
+          echo "::error ::Mismatch found in ChM-2.txt between repos."
+          echo "--- SOURCE:"
+          cat source/messages/ChM-2.txt
+          echo "--- MIRROR:"
+          cat mirror/messages/ChM-2.txt
+          exit 1
+        fi
         echo "✅ ChM-2.txt files are identical."
