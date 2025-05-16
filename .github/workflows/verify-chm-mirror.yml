@@ -3,6 +3,9 @@ name: Verify ChM Mirror
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   verify-mirror:
     runs-on: ubuntu-latest
@@ -22,43 +25,39 @@ jobs:
         path: mirror
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: List files in both repos
+    - name: Compare all ChM files and extract hashes
       run: |
-        echo "SOURCE:"
-        ls -l source/messages/
-        echo "MIRROR:"
-        ls -l mirror/messages/
-
-    - name: Compare ChM-2.txt files
-      run: |
-        echo "Comparing ChM-2.txt from both repos..."
-        if ! diff -u source/messages/ChM-2.txt mirror/messages/ChM-2.txt; then
-          echo "::error ::Mismatch found in ChM-2.txt between repos."
-          echo "--- SOURCE:"
-          cat source/messages/ChM-2.txt
-          echo "--- MIRROR:"
-          cat mirror/messages/ChM-2.txt
-          exit 1
-        fi
-        echo "✅ ChM-2.txt files are identical."
-
-    - name: Extract ChM-HASH and write to report
-      run: |
-        echo "🔍 Extracting ChM-HASH from ChM-2.txt..."
-
-        HASH_LINE=$(grep '^ChM-HASH:' source/messages/ChM-2.txt || true)
-
-        if [ -z "$HASH_LINE" ]; then
-          echo "::error ::No ChM-HASH found in source/messages/ChM-2.txt"
-          exit 1
-        fi
-
         mkdir -p verify
-        echo "File: ChM-2.txt" > verify/verify-report.txt
-        echo "$HASH_LINE" >> verify/verify-report.txt
+        REPORT_FILE="verify/verify-report.txt"
+        echo "🔍 C-HASH-P Mirror Report" > $REPORT_FILE
+        echo "Generated: $(date -u)" >> $REPORT_FILE
+        echo "" >> $REPORT_FILE
+
+        for FILE in source/messages/ChM-*.txt; do
+          FILENAME=$(basename "$FILE")
+          MIRROR_FILE="mirror/messages/$FILENAME"
+
+          echo "▶ Checking $FILENAME" | tee -a $REPORT_FILE
+
+          if [ ! -f "$MIRROR_FILE" ]; then
+            echo "❌ $FILENAME missing in mirror!" | tee -a $REPORT_FILE
+            echo "" >> $REPORT_FILE
+            continue
+          fi
+
+          if ! diff -q "$FILE" "$MIRROR_FILE" > /dev/null; then
+            echo "❌ $FILENAME mismatch between source and mirror!" | tee -a $REPORT_FILE
+          else
+            echo "✅ $FILENAME matches" | tee -a $REPORT_FILE
+          fi
+
+          HASH_LINE=$(grep '^ChM-HASH:' "$FILE" || echo "ChM-HASH: NOT FOUND")
+          echo "$HASH_LINE" >> $REPORT_FILE
+          echo "" >> $REPORT_FILE
+        done
 
         echo "--- Verify Report ---"
-        cat verify/verify-report.txt
+        cat $REPORT_FILE
 
     - name: Commit and push verify report
       run: |
@@ -67,7 +66,6 @@ jobs:
         git config --global user.email "chm-bot@users.noreply.github.com"
         cp ../verify/verify-report.txt verify/verify-report.txt
         git add verify/verify-report.txt
-        git commit -m "Add ChM verify report [auto]" || echo "No changes to commit"
-        git push
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        git commit -m "Update verify report [auto]" || echo "No changes to commit"
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/4RK-OFF/C-HASH-P.git
+        git push origin HEAD
