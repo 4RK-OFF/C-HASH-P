@@ -1,6 +1,6 @@
 async function loadReport() {
   const output = document.getElementById("report-output");
-  const res = await fetch("../verify/verify-report.txt");
+  const res = await fetch("verify-report.txt");
 
   if (!res.ok) {
     output.innerText = "Failed to load verify-report.txt";
