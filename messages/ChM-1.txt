@@ -1,0 +1,30 @@
+ID: ChM-1
+
+ChM-HASH: f5c95173700c9a5b3224d0c869cc05f8422e06e440d8c40e4e014a998dd5530e
+
+C-HASH: 2a629e6402869f733ad212477a000d4392562359b86f1a552fd98e7bfbbf5a2d
+
+Message:
+CHP-v1
+
+Purpose: Authenticity Signature Proof of UNIVERSE.DAO  
+UTC: 2025-05-16 14:30  
+Hash Method: SHA256 of canonical plain text (ChM + identity block)  
+Hashed Message Destination: UNIVERSE-DAO/C-HASH-P/messages/
+
+[BTC]  
+Address: -  
+PubKey: -  
+URL: https://ud.me/universe.dao  
+
+[ETH]  
+Address: -  
+PubKey: -  
+URL: https://ud.me/universe.dao  
+
+[GitHub]  
+Username: 4RK-OFF  
+SIG3-URL: https://github.com/4RK-OFF/universe.dao-sig3.git/messages/
+
+SIG-UNIVERSE.DAO
+2a629e6402869f733ad212477a000d4392562359b86f1a552fd98e7bfbbf5a2d
