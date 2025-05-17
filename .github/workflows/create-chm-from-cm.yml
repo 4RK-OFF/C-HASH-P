@@ -1,4 +1,4 @@
-name: Create ChM from CM Draft
+name: Create Canonical Message from CM Draft
 
 on:
   workflow_dispatch:
@@ -7,16 +7,14 @@ permissions:
   contents: write
 
 jobs:
-  create-chm:
+  generate-canonical-message:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout repository
       uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Create ChM-* from CM-* (with ChM-HASH)
+    - name: Create ChM-x.txt from CM-x.txt with canonical header
       run: |
         mkdir -p messages
         cd messages
@@ -27,17 +25,43 @@ jobs:
             exit 1
           fi
 
-          CHM_ID=$(basename "$CM_FILE" .txt | sed 's/^CM-/ChM-/')
+          echo "▶ Processing $CM_FILE"
+
+          # Extract footer line with ChM-ID and C-HASH
+          FOOTER_LINE=$(grep '^ChM-' "$CM_FILE")
+
+          if [[ -z "$FOOTER_LINE" ]]; then
+            echo "❌ Missing ChM footer line in $CM_FILE"
+            continue
+          fi
+
+          CHM_ID=$(echo "$FOOTER_LINE" | cut -d':' -f1)     # ChM-42
+          VERSION=$(echo "$FOOTER_LINE" | cut -d':' -f2)     # v1
+          C_HASH=$(echo "$FOOTER_LINE" | cut -d':' -f3)      # actual hash
+
           CHM_FILE="$CHM_ID.txt"
 
-          HASH=$(sha256sum "$CM_FILE" | awk '{print $1}')
+          # Compute SHA256 hash of full content
+          CHM_HASH=$(sha256sum "$CM_FILE" | awk '{print $1}')
 
-          echo "▶ Processing $CM_FILE → $CHM_FILE"
-          echo "ChM-HASH: $HASH" > "$CHM_FILE"
-          cat "$CM_FILE" >> "$CHM_FILE"
+          # Current UTC timestamp
+          UTC=$(date -u +"%Y-%m-%d %H:%M UTC")
+
+          # Write canonical output file
+          {
+            echo "ID: $CHM_ID"
+            echo "UTC: $UTC"
+            echo "ChM-HASH: $CHM_HASH"
+            echo "C-HASH: $C_HASH"
+            echo ""
+            echo "Message:"
+            cat "$CM_FILE"
+          } > "$CHM_FILE"
+
+          echo "✅ Generated $CHM_FILE"
         done
 
-    - name: Commit and push ChM-* files
+    - name: Commit and push new ChM files
       run: |
         git config --global user.name "chm-bot"
         git config --global user.email "chm@universe.dao"
