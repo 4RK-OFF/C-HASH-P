@@ -1,28 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>ChP-UI — Canonical Message Viewer</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIG-UNIVERSE.DAO Verifier</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: #1e1e1e;
+      color: #f8f8f8;
+      font-family: system-ui, sans-serif;
+      padding: 2em;
+      max-width: 80%;
+      margin: auto;
+    }
+    select {
+      font-size: 1em;
+      padding: 0.3em;
+      background: #111;
+      color: white;
+      border: 1px solid #444;
+    }
+    h1 {
+      font-weight: 800;
+    }
+    pre {
+      background: #2b2b2b;
+      padding: 1em;
+      overflow-x: auto;
+      color: #cceccc;
+    }
+    h2 {
+      margin-top: 2em;
+    }
+    code {
+      background: #333;
+      padding: 0.2em 0.4em;
+      font-family: monospace;
+      color: #aaf;
+    }
+  </style>
 </head>
 <body>
   <h1>SIG-UNIVERSE.DAO — Canonical Message Verifier</h1>
 
-  <label for="chmSelect">Select a message:</label>
-  <select id="chmSelect">
-    <option value="">— Choose ChM File —</option>
+  <label for="message-select">Select a message:</label>
+  <select id="message-select">
+    <option selected disabled>— Choose ChM File —</option>
   </select>
 
-  <div id="messageMeta" style="margin-top: 2em; display: none;">
-    <h2>Message Info</h2>
-    <pre id="metaOutput"></pre>
+  <h2>Message Info</h2>
+  <div id="message-info"><i>Waiting for selection...</i></div>
 
-    <h2>Quorum Verification</h2>
-    <pre id="quorumOutput">[Pending implementation]</pre>
-  </div>
+  <h2>Quorum Verification</h2>
+  <div id="quorum-info"><i>Looking for SIG3 signature...</i></div>
 
-  <script src="script.js?=v2"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>
-
-
