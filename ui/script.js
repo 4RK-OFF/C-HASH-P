@@ -1,72 +1,69 @@
-const sigFiles = [
-  { id: "SIG1_BTC.txt", label: "BTC" },
-  { id: "SIG2_ETH.txt", label: "ETH" },
-  { id: "SIG3_GITHUB.txt", label: "GitHub" },
+const chmSelect = document.getElementById("chmSelect");
+const metaOutput = document.getElementById("metaOutput");
+const quorumOutput = document.getElementById("quorumOutput");
+const messageMeta = document.getElementById("messageMeta");
+
+async function fetchText(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load ${url}`);
+  return await res.text();
+}
+
+// Load file list from messages/ using a hardcoded index (adjust as needed)
+const knownFiles = [
+  "ChM-1.txt",
+  "ChM-2.txt",
+  "ChM-42.txt"
 ];
 
-async function checkSigFiles() {
-  const results = {};
-  for (const sig of sigFiles) {
-    try {
-      const res = await fetch(sig.id);
-      results[sig.id] = res.ok;
-    } catch {
-      results[sig.id] = false;
-    }
+function populateDropdown() {
+  for (const file of knownFiles) {
+    const opt = document.createElement("option");
+    opt.value = file;
+    opt.textContent = file;
+    chmSelect.appendChild(opt);
   }
-  return results;
 }
 
-async function loadReport() {
-  const output = document.getElementById("report-output");
-  const res = await fetch("verify-report.txt");
+async function loadAndDisplayMetadata(filename) {
+  try {
+    const content = await fetchText(`../messages/${filename}`);
+    const lines = content.split("\n");
 
-  if (!res.ok) {
-    output.innerText = "❌ Failed to load verify-report.txt";
-    return;
-  }
+    let metadata = {
+      ID: "-",
+      UTC: "-",
+      "ChM-HASH": "-",
+      "C-HASH": "-",
+      "V-CHECK": "-"
+    };
 
-  const sigPresence = await checkSigFiles();
-  const text = await res.text();
-  const lines = text.split("\n");
-
-  let html = `<table><thead><tr><th>File</th><th>Status</th><th>ChM-HASH</th><th>Signatures</th><th>Quorum</th></tr></thead><tbody>`;
-
-  let currentFile = null;
-  let currentHash = "";
-  let matchStatus = "";
-
-  for (const line of lines) {
-    if (line.startsWith("▶ Checking")) {
-      currentFile = line.replace("▶ Checking ", "").trim();
-      currentHash = "";
-      matchStatus = "";
-    } else if (line.includes("✅") || line.includes("❌")) {
-      matchStatus = line.includes("✅") ? "✅ Match" : "❌ Mismatch";
-    } else if (line.startsWith("ChM-HASH:")) {
-      currentHash = line.replace("ChM-HASH:", "").trim();
-
-      // Simulate: If a ChM-HASH exists, it could be signed
-      const sigList = sigFiles.map(sig => {
-        const exists = sigPresence[sig.id];
-        return exists ? `✅ ${sig.label}` : `❌ ${sig.label}`;
-      });
-
-      const sigCount = sigList.filter(s => s.includes("✅")).length;
-      const quorumOK = sigCount >= 2 ? "✅" : "❌";
-
-      html += `<tr>
-        <td>${currentFile}</td>
-        <td>${matchStatus}</td>
-        <td><code>${currentHash}</code></td>
-        <td>${sigList.join(", ")}</td>
-        <td>${quorumOK} ${sigCount}/3</td>
-      </tr>`;
+    for (const line of lines) {
+      if (line.startsWith("ID:")) metadata.ID = line.slice(3).trim();
+      else if (line.startsWith("UTC:")) metadata.UTC = line.slice(4).trim();
+      else if (line.startsWith("ChM-HASH:")) metadata["ChM-HASH"] = line.slice(9).trim();
+      else if (line.startsWith("C-HASH:")) metadata["C-HASH"] = line.slice(7).trim();
+      else if (line.startsWith("V-CHECK:")) metadata["V-CHECK"] = line.slice(8).trim();
     }
-  }
 
-  html += "</tbody></table>";
-  output.innerHTML = html;
+    metaOutput.textContent = Object.entries(metadata)
+      .map(([key, val]) => `${key}: ${val}`)
+      .join("\n");
+
+    quorumOutput.textContent = "🔧 Coming soon: verify SIG1, SIG2, SIG3…";
+
+    messageMeta.style.display = "block";
+
+  } catch (err) {
+    metaOutput.textContent = `❌ Failed to load: ${err.message}`;
+    quorumOutput.textContent = "";
+    messageMeta.style.display = "block";
+  }
 }
 
-loadReport();
+chmSelect.addEventListener("change", () => {
+  const selected = chmSelect.value;
+  if (selected) loadAndDisplayMetadata(selected);
+});
+
+populateDropdown();
