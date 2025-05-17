@@ -5,10 +5,4 @@ Generated: Fri May 16 23:09:50 UTC 2025
 ✅ ChM-1.txt matches
 ChM-HASH: f5c95173700c9a5b3224d0c869cc05f8422e06e440d8c40e4e014a998dd5530e
 
-▶ Checking ChM-2.txt
-✅ ChM-2.txt matches
-ChM-HASH: af909570cd6839b172f3a694e6816d89d29dc92d4ab9224118c89cbc64a8f822
-
-▶ Checking ChM-Template.txt
-❌ ChM-Template.txt missing in mirror!
 
