@@ -1,4 +1,4 @@
-name: Create Canonical Message from CM Draft
+name: PUSH new ChM
 
 on:
   workflow_dispatch:
