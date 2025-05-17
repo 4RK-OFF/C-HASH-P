@@ -1,3 +1,7 @@
+    - name: Create hash_check.py
+      run: |
+        mkdir -p source/verify
+        cat <<EOF > source/verify/hash_check.py
 import hashlib
 import sys
 
@@ -11,8 +15,7 @@ def remove_chm_hash_line(lines):
     return [line for line in lines if not line.startswith("ChM-HASH:")]
 
 def normalize_text(lines):
-    # Normalize line endings and trim trailing whitespace
-    return "\n".join([line.rstrip() for line in lines]).strip() + "\n"
+    return "\\n".join([line.rstrip() for line in lines]).strip() + "\\n"
 
 def main(path):
     with open(path, "r") as f:
@@ -38,3 +41,4 @@ def main(path):
 if __name__ == "__main__":
     ok = main(sys.argv[1])
     sys.exit(0 if ok else 1)
+EOF
