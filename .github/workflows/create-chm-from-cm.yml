@@ -1,0 +1,46 @@
+name: Create ChM from CM Draft
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create-chm:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create ChM-* from CM-* (with ChM-HASH)
+      run: |
+        mkdir -p messages
+        cd messages
+
+        for CM_FILE in CM-*.txt; do
+          if [ ! -f "$CM_FILE" ]; then
+            echo "❌ No CM-*.txt files found."
+            exit 1
+          fi
+
+          CHM_ID=$(basename "$CM_FILE" .txt | sed 's/^CM-/ChM-/')
+          CHM_FILE="$CHM_ID.txt"
+
+          HASH=$(sha256sum "$CM_FILE" | awk '{print $1}')
+
+          echo "▶ Processing $CM_FILE → $CHM_FILE"
+          echo "ChM-HASH: $HASH" > "$CHM_FILE"
+          cat "$CM_FILE" >> "$CHM_FILE"
+        done
+
+    - name: Commit and push ChM-* files
+      run: |
+        git config --global user.name "chm-bot"
+        git config --global user.email "chm@universe.dao"
+        git add messages/ChM-*.txt
+        git commit -m "Generate ChM from CM [auto]" || echo "No changes to commit"
+        git push
