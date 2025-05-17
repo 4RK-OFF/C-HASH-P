@@ -1,4 +1,4 @@
 We confirm Proposal 42 passed with quorum.
 
 SIG-UNIVERSE.DAO  
-ChM-42:v1:5e8554169f139a1a95b82a808b1bbe6b7e4d3216c72e0415db25ab3dffa845f4
+ChM-42:v1:f5c95173700c9a5b3224d0c869cc05f8422e06e440d8c40e4e014a998dd5530e
