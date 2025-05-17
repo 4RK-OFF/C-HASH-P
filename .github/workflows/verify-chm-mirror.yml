@@ -60,6 +60,9 @@ jobs:
         cd source
         git config --global user.name "chm-bot"
         git config --global user.email "chm@universe.dao"
-        git add verify/verify-report.txt signers/SIG3/*.sig
+
+        [ -e verify/verify-report.txt ] && git add verify/verify-report.txt
+        ls signers/SIG3/*.sig 2>/dev/null && git add signers/SIG3/*.sig || echo "No SIG3 signatures to add."
+
         git commit -m "Update verify-report and SIG3 auto-signatures [auto]" || echo "No changes to commit"
         git push
