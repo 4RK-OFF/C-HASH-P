@@ -60,7 +60,7 @@ jobs:
     - name: Copy report to UI folder
       run: |
         cd source
-        cp verify/verify-report.txt ui/verify-report.txt
+        cp verify/verify-report.txt
 
     - name: Commit and push report + SIG3
       run: |
