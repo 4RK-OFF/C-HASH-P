@@ -109,13 +109,3 @@ jobs:
           echo "" >> $REPORT
         done
 
-    - name: Commit and push verify report to ui/
-      run: |
-        cd source
-        git config --global user.name "chm-verifier"
-        git config --global user.email "chm-bot@users.noreply.github.com"
-        cp ../verify/verify-report.txt ui/verify-report.txt
-        git add ui/verify-report.txt
-        git commit -m "Update verify-report [auto]" || echo "No changes to commit"
-        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/4RK-OFF/C-HASH-P.git
-        git pus
