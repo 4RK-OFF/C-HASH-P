@@ -1,7 +1,0 @@
-{
-  "label": "GitHub Mirror",
-  "type": "mirror",
-  "required": false,
-  "method": "github",
-  "verifies": "ChM-HASH"
-}
