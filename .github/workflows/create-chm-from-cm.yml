@@ -1,4 +1,4 @@
-name: Verify ChM Mirror
+name: Create Canonical Message from CM Draft
 
 on:
   workflow_dispatch:
@@ -7,63 +7,70 @@ permissions:
   contents: write
 
 jobs:
-  verify-mirror:
+  generate-canonical-message:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout source repo (C-HASH-P)
+    - name: Checkout repository
       uses: actions/checkout@v3
-      with:
-        repository: 4RK-OFF/C-HASH-P
-        path: source
 
-    - name: Checkout mirror repo (SIG3)
-      uses: actions/checkout@v3
-      with:
-        repository: 4RK-OFF/universe.dao-sig3
-        path: mirror
-
-    - name: Compare ChM files + generate report + SIG3
+    - name: Generate ChM-*.txt with header + V-CHECK
       run: |
-        mkdir -p verify signers/SIG3
-        REPORT="verify/verify-report.txt"
-        echo "🔍 C-HASH-P Mirror Report" > $REPORT
-        echo "Generated: $(date -u)" >> $REPORT
-        echo "" >> $REPORT
+        for CM_FILE in messages/CM-*.txt; do
+          if [ ! -f "$CM_FILE" ]; then
+            echo "❌ No CM-*.txt files found."
+            exit 1
+          fi
 
-        for FILE in source/messages/ChM-*.txt; do
-          FILENAME=$(basename "$FILE")
-          MIRROR_FILE="mirror/messages/$FILENAME"
+          echo "▶ Processing $CM_FILE"
 
-          echo "▶ Checking $FILENAME" | tee -a $REPORT
+          # Extract footer like: ChM-42:v1:<C-HASH>
+          FOOTER_LINE=$(grep '^ChM-' "$CM_FILE")
 
-          if [ ! -f "$MIRROR_FILE" ]; then
-            echo "❌ $FILENAME missing in mirror!" | tee -a $REPORT
-            echo "" >> $REPORT
+          if [[ -z "$FOOTER_LINE" ]]; then
+            echo "❌ Missing ChM footer line in $CM_FILE"
             continue
           fi
 
-          if cmp -s "$FILE" "$MIRROR_FILE"; then
-            echo "✅ $FILENAME matches" | tee -a $REPORT
-            HASH=$(sha256sum "$FILE" | awk '{print $1}')
-            echo "ChM-HASH: $HASH" >> $REPORT
+          CHM_ID=$(echo "$FOOTER_LINE" | cut -d':' -f1)     # ChM-42
+          VERSION=$(echo "$FOOTER_LINE" | cut -d':' -f2)     # v1
+          C_HASH=$(echo "$FOOTER_LINE" | cut -d':' -f3)      # hash
 
-            # Write SIG3 if match
-            echo "$HASH" > "source/signers/SIG3/SIG3-$FILENAME.sig"
+          CHM_FILE="messages/$CHM_ID.txt"
+          CHM_HASH=$(sha256sum "$CM_FILE" | awk '{print $1}')
+          UTC=$(date -u +"%Y-%m-%d %H:%M UTC")
+
+          CHP_FILE="CHP/CHP-$VERSION.chp"
+          if [ ! -f "$CHP_FILE" ]; then
+            V_CHECK="❌ CHP-$VERSION.chp not found"
           else
-            echo "❌ $FILENAME mismatch" | tee -a $REPORT
+            CHP_HASH=$(sha256sum "$CHP_FILE" | awk '{print $1}')
+            if [ "$CHP_HASH" = "$C_HASH" ]; then
+              V_CHECK="✅ CHP-$VERSION matches C-HASH"
+            else
+              V_CHECK="❌ MISMATCH — CHP-$VERSION does not match C-HASH"
+            fi
           fi
-          echo "" >> $REPORT
+
+          # Build the final ChM file with canonical header
+          {
+            echo "ID: $CHM_ID"
+            echo "UTC: $UTC"
+            echo "ChM-HASH: $CHM_HASH"
+            echo "C-HASH: $C_HASH"
+            echo "V-CHECK: $V_CHECK"
+            echo ""
+            echo "Message:"
+            cat "$CM_FILE"
+          } > "$CHM_FILE"
+
+          echo "✅ Created $CHM_FILE"
         done
 
-    - name: Copy report to UI folder
-      run: cp source/verify/verify-report.txt source/ui/verify-report.txt
-
-    - name: Commit and push report + SIG3
+    - name: Commit and push ChM files
       run: |
-        cd source
         git config --global user.name "chm-bot"
         git config --global user.email "chm@universe.dao"
-        git add ui/verify-report.txt signers/SIG3/*.sig
-        git commit -m "Update verify-report and SIG3 auto-signatures [auto]" || echo "No changes to commit"
+        git add messages/ChM-*.txt
+        git commit -m "Generate ChM from CM [auto]" || echo "No changes to commit"
         git push
