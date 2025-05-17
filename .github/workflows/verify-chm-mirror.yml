@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout source repo (C-HASH-P)
+    - name: Checkout source repo (SIG)
       uses: actions/checkout@v3
       with:
-        repository: 4RK-OFF/C-HASH-P
+        repository: 4RK-OFF/SIG
         path: source
 
     - name: Checkout mirror repo (SIG3)
@@ -48,8 +48,6 @@ jobs:
             echo "✅ $FILENAME matches" | tee -a $REPORT
             HASH=$(sha256sum "$FILE" | awk '{print $1}')
             echo "ChM-HASH: $HASH" >> $REPORT
-
-            # Write SIG3 signature
             echo "$HASH" > "signers/SIG3/SIG3-$FILENAME.sig"
           else
             echo "❌ $FILENAME mismatch" | tee -a $REPORT
@@ -57,16 +55,11 @@ jobs:
           echo "" >> $REPORT
         done
 
-    - name: Copy report to UI folder
-      run: |
-        cd source
-        cp verify/verify-report.txt
-
     - name: Commit and push report + SIG3
       run: |
         cd source
         git config --global user.name "chm-bot"
         git config --global user.email "chm@universe.dao"
-        git add ui/verify-report.txt signers/SIG3/*.sig
+        git add verify/verify-report.txt signers/SIG3/*.sig
         git commit -m "Update verify-report and SIG3 auto-signatures [auto]" || echo "No changes to commit"
         git push
