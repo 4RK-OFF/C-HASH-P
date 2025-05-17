@@ -1,87 +1,31 @@
-const chmSelect = document.getElementById("chmSelect");
-const metaOutput = document.getElementById("metaOutput");
-const quorumOutput = document.getElementById("quorumOutput");
-const messageMeta = document.getElementById("messageMeta");
-
-// ⚙️ Hardcoded message + signature files (can be generated later)
-const knownFiles = ["ChM-1.txt", "ChM-2.txt", "ChM-42.txt"];
-const signatureFiles = [
-  { file: "SIG1_BTC.txt", label: "BTC" },
-  { file: "SIG2_ETH.txt", label: "ETH" },
-  { file: "SIG3_GITHUB.txt", label: "GitHub" }
-];
-
-function populateDropdown() {
-  for (const file of knownFiles) {
-    const opt = document.createElement("option");
-    opt.value = file;
-    opt.textContent = file;
-    chmSelect.appendChild(opt);
-  }
+body {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+  font-family: sans-serif;
+  padding: 2em;
+  width: 80%;
+  margin: 0 auto;
 }
 
-async function fetchText(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to load ${url}`);
-  return await res.text();
+h1, h2 {
+  color: #ffffff;
 }
 
-async function loadAndDisplayMetadata(filename) {
-  try {
-    const content = await fetchText(`../messages/${filename}`);
-    const lines = content.split("\n");
-
-    const metadata = {
-      ID: "-",
-      UTC: "-",
-      "ChM-HASH": "-",
-      "C-HASH": "-",
-      "V-CHECK": "-"
-    };
-
-    for (const line of lines) {
-      if (line.startsWith("ID:")) metadata.ID = line.slice(3).trim();
-      else if (line.startsWith("UTC:")) metadata.UTC = line.slice(4).trim();
-      else if (line.startsWith("ChM-HASH:")) metadata["ChM-HASH"] = line.slice(9).trim();
-      else if (line.startsWith("C-HASH:")) metadata["C-HASH"] = line.slice(7).trim();
-      else if (line.startsWith("V-CHECK:")) metadata["V-CHECK"] = line.slice(8).trim();
-    }
-
-    // Display metadata
-    metaOutput.textContent = Object.entries(metadata)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join("\n");
-
-    // 🧠 Check each SIG file for matching ChM-HASH
-    let quorumCount = 0;
-    const quorumStatus = [];
-
-    for (const sig of signatureFiles) {
-      try {
-        const sigContent = await fetchText(`../signatures/${sig.file}`);
-        const matched = sigContent.includes(metadata["ChM-HASH"]);
-        quorumStatus.push(`${sig.label}: ${matched ? "✅" : "❌"}`);
-        if (matched) quorumCount++;
-      } catch (e) {
-        quorumStatus.push(`${sig.label}: ❌ not found`);
-      }
-    }
-
-    const quorumLine = `Quorum: ${quorumCount} of ${signatureFiles.length} → ${quorumCount >= 2 ? "✅ MET" : "❌ NOT MET"}`;
-
-    quorumOutput.textContent = quorumStatus.join("\n") + `\n\n${quorumLine}`;
-    messageMeta.style.display = "block";
-
-  } catch (err) {
-    metaOutput.textContent = `❌ Failed to load message: ${err.message}`;
-    quorumOutput.textContent = "";
-    messageMeta.style.display = "block";
-  }
+select {
+  padding: 0.5em;
+  font-size: 1em;
+  margin-top: 1em;
+  background-color: #2e2e2e;
+  color: #f0f0f0;
+  border: 1px solid #444;
+  border-radius: 4px;
 }
 
-chmSelect.addEventListener("change", () => {
-  const selected = chmSelect.value;
-  if (selected) loadAndDisplayMetadata(selected);
-});
-
-populateDropdown();
+pre {
+  background-color: #2b2b2b;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.95em;
+  border: 1px solid #444;
+}
