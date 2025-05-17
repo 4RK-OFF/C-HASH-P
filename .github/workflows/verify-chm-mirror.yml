@@ -25,39 +25,88 @@ jobs:
         path: mirror
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Compare all ChM files and extract hashes
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Create hash_check.py
+      run: |
+        mkdir -p source/verify
+        cat <<EOF > source/verify/hash_check.py
+        import hashlib, sys
+
+        def extract_claimed_hash(lines):
+            for line in lines:
+                if line.startswith("ChM-HASH:"):
+                    return line.strip().split(":", 1)[1].strip()
+            return None
+
+        def main(path):
+            with open(path, "r") as f:
+                lines = f.readlines()
+                full_text = ''.join(lines)
+
+            claimed = extract_claimed_hash(lines)
+            if not claimed:
+                print(f"{path}: ❌ No ChM-HASH found")
+                return False
+
+            computed = hashlib.sha256(full_text.encode("utf-8")).hexdigest()
+
+            if claimed == computed:
+                print(f"{path}: ✅ ChM-HASH matches")
+                return True
+            else:
+                print(f"{path}: ❌ Hash mismatch")
+                print(f"  Claimed:  {claimed}")
+                print(f"  Computed: {computed}")
+                return False
+
+        if __name__ == "__main__":
+            ok = main(sys.argv[1])
+            sys.exit(0 if ok else 1)
+        EOF
+
+    - name: Compare ChM files, extract hashes, verify integrity
       run: |
         mkdir -p verify
-        REPORT_FILE="verify/verify-report.txt"
-        echo "🔍 C-HASH-P Mirror Report" > $REPORT_FILE
-        echo "Generated: $(date -u)" >> $REPORT_FILE
-        echo "" >> $REPORT_FILE
+        REPORT="verify/verify-report.txt"
+        echo "🔍 C-HASH-P Mirror Report" > $REPORT
+        echo "Generated: $(date -u)" >> $REPORT
+        echo "" >> $REPORT
 
-        for FILE in source/messages/ChM-*.txt; do
+        for FILE in source/messages/ChM-[0-9]*.txt; do
           FILENAME=$(basename "$FILE")
           MIRROR_FILE="mirror/messages/$FILENAME"
 
-          echo "▶ Checking $FILENAME" | tee -a $REPORT_FILE
+          echo "▶ Checking $FILENAME" | tee -a $REPORT
 
           if [ ! -f "$MIRROR_FILE" ]; then
-            echo "❌ $FILENAME missing in mirror!" | tee -a $REPORT_FILE
-            echo "" >> $REPORT_FILE
+            echo "❌ $FILENAME missing in mirror!" | tee -a $REPORT
+            echo "" >> $REPORT
             continue
           fi
 
           if ! diff -q "$FILE" "$MIRROR_FILE" > /dev/null; then
-            echo "❌ $FILENAME mismatch between source and mirror!" | tee -a $REPORT_FILE
+            echo "❌ $FILENAME mismatch between source and mirror!" | tee -a $REPORT
           else
-            echo "✅ $FILENAME matches" | tee -a $REPORT_FILE
+            echo "✅ $FILENAME matches" | tee -a $REPORT
           fi
 
           HASH_LINE=$(grep '^ChM-HASH:' "$FILE" || echo "ChM-HASH: NOT FOUND")
-          echo "$HASH_LINE" >> $REPORT_FILE
-          echo "" >> $REPORT_FILE
+          echo "$HASH_LINE" >> $REPORT
+          echo "" >> $REPORT
         done
 
-        echo "--- Verify Report ---"
-        cat $REPORT_FILE
+        echo "ChM-HASH Integrity Check" >> $REPORT
+        echo "" >> $REPORT
+
+        for FILE in source/messages/ChM-[0-9]*.txt; do
+          echo "▶ $FILE" >> $REPORT
+          python3 source/verify/hash_check.py "$FILE" >> $REPORT || true
+          echo "" >> $REPORT
+        done
 
     - name: Commit and push verify report to ui/
       run: |
@@ -66,6 +115,6 @@ jobs:
         git config --global user.email "chm-bot@users.noreply.github.com"
         cp ../verify/verify-report.txt ui/verify-report.txt
         git add ui/verify-report.txt
-        git commit -m "Update verify-report in UI [auto]" || echo "No changes to commit"
+        git commit -m "Update verify-report [auto]" || echo "No changes to commit"
         git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/4RK-OFF/C-HASH-P.git
         git push origin HEAD
