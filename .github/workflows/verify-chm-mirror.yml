@@ -1,22 +1,27 @@
 import hashlib
 import sys
 
-def extract_claimed_hash(path):
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            if line.startswith("ChM-HASH:"):
-                return line.strip().split(":", 1)[1].strip()
+def extract_claimed_hash(lines):
+    for line in lines:
+        if line.startswith("ChM-HASH:"):
+            return line.strip().split(":", 1)[1].strip()
     return None
 
+def strip_chm_hash_line(lines):
+    return [line for line in lines if not line.startswith("ChM-HASH:")]
+
 def main(path):
-    claimed = extract_claimed_hash(path)
+    with open(path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    claimed = extract_claimed_hash(lines)
     if not claimed:
         print(f"{path}: ❌ No ChM-HASH found")
         return False
 
-    with open(path, "rb") as f:
-        content = f.read()
-    computed = hashlib.sha256(content).hexdigest()
+    # Strip ChM-HASH line, then hash as utf-8
+    stripped_content = ''.join(strip_chm_hash_line(lines))
+    computed = hashlib.sha256(stripped_content.encode("utf-8")).hexdigest()
 
     if claimed == computed:
         print(f"{path}: ✅ ChM-HASH matches")
@@ -28,4 +33,5 @@ def main(path):
         return False
 
 if __name__ == "__main__":
-    sys.exit(0 if main(sys.argv[1]) else 1)
+    ok = main(sys.argv[1])
+    sys.exit(0 if ok else 1)
