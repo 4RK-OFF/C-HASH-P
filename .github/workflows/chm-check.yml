@@ -14,7 +14,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Create ChM-x.txt from CM-x.txt with canonical header
+    - name: Generate ChM-*.txt with header + V-CHECK
       run: |
         mkdir -p messages
         cd messages
@@ -27,7 +27,7 @@ jobs:
 
           echo "▶ Processing $CM_FILE"
 
-          # Extract footer line with ChM-ID and C-HASH
+          # Extract footer line like: ChM-42:v1:<C-HASH>
           FOOTER_LINE=$(grep '^ChM-' "$CM_FILE")
 
           if [[ -z "$FOOTER_LINE" ]]; then
@@ -40,28 +40,38 @@ jobs:
           C_HASH=$(echo "$FOOTER_LINE" | cut -d':' -f3)      # actual hash
 
           CHM_FILE="$CHM_ID.txt"
-
-          # Compute SHA256 hash of full content
           CHM_HASH=$(sha256sum "$CM_FILE" | awk '{print $1}')
-
-          # Current UTC timestamp
           UTC=$(date -u +"%Y-%m-%d %H:%M UTC")
 
-          # Write canonical output file
+          # Look for corresponding .chp file
+          CHP_FILE="../CHP/CHP-$VERSION.chp"
+          if [ ! -f "$CHP_FILE" ]; then
+            V_CHECK="❌ Missing CHP-$VERSION.chp"
+          else
+            CHP_HASH=$(sha256sum "$CHP_FILE" | awk '{print $1}')
+            if [ "$CHP_HASH" = "$C_HASH" ]; then
+              V_CHECK="✅ CHP-$VERSION matches C-HASH"
+            else
+              V_CHECK="❌ MISMATCH — CHP-$VERSION does not match C-HASH"
+            fi
+          fi
+
+          # Write the canonical message
           {
             echo "ID: $CHM_ID"
             echo "UTC: $UTC"
             echo "ChM-HASH: $CHM_HASH"
             echo "C-HASH: $C_HASH"
+            echo "V-CHECK: $V_CHECK"
             echo ""
             echo "Message:"
             cat "$CM_FILE"
           } > "$CHM_FILE"
 
-          echo "✅ Generated $CHM_FILE"
+          echo "✅ Created $CHM_FILE"
         done
 
-    - name: Commit and push new ChM files
+    - name: Commit and push ChM files
       run: |
         git config --global user.name "chm-bot"
         git config --global user.email "chm@universe.dao"
