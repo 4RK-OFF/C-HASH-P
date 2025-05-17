@@ -42,17 +42,20 @@ jobs:
                     return line.strip().split(":", 1)[1].strip()
             return None
 
+        def remove_chm_hash_line(lines):
+            return [line for line in lines if not line.startswith("ChM-HASH:")]
+
         def main(path):
             with open(path, "r") as f:
                 lines = f.readlines()
-                full_text = ''.join(lines)
 
             claimed = extract_claimed_hash(lines)
             if not claimed:
                 print(f"{path}: ❌ No ChM-HASH found")
                 return False
 
-            computed = hashlib.sha256(full_text.encode("utf-8")).hexdigest()
+            content = ''.join(remove_chm_hash_line(lines))
+            computed = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
             if claimed == computed:
                 print(f"{path}: ✅ ChM-HASH matches")
