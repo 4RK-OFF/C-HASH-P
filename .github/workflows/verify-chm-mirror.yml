@@ -30,7 +30,7 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Create hash_check.py (correct version)
+    - name: Create hash_check.py (binary-safe)
       run: |
         mkdir -p source/verify
         cat <<EOF > source/verify/hash_check.py
@@ -43,17 +43,17 @@ jobs:
             return None
 
         def main(path):
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-                full_text = ''.join(lines)
 
             claimed = extract_claimed_hash(lines)
             if not claimed:
                 print(f"{path}: ❌ No ChM-HASH found")
                 return False
 
-            # Hash the full file contents as-is
-            computed = hashlib.sha256(full_text.encode("utf-8")).hexdigest()
+            with open(path, "rb") as f:
+                content = f.read()
+                computed = hashlib.sha256(content).hexdigest()
 
             if claimed == computed:
                 print(f"{path}: ✅ ChM-HASH matches")
