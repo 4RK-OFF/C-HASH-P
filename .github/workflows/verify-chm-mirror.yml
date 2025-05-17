@@ -1,45 +1,42 @@
     - name: Create hash_check.py
       run: |
         mkdir -p source/verify
-        cat <<EOF > source/verify/hash_check.py
-import hashlib
-import sys
-
-def extract_claimed_hash(lines):
-    for line in lines:
-        if line.startswith("ChM-HASH:"):
-            return line.strip().split(":", 1)[1].strip()
-    return None
-
-def remove_chm_hash_line(lines):
-    return [line for line in lines if not line.startswith("ChM-HASH:")]
-
-def normalize_text(lines):
-    return "\\n".join([line.rstrip() for line in lines]).strip() + "\\n"
-
-def main(path):
-    with open(path, "r") as f:
-        lines = f.readlines()
-
-    claimed = extract_claimed_hash(lines)
-    if not claimed:
-        print(f"{path}: ❌ No ChM-HASH found")
-        return False
-
-    content = normalize_text(remove_chm_hash_line(lines))
-    computed = hashlib.sha256(content.encode("utf-8")).hexdigest()
-
-    if claimed == computed:
-        print(f"{path}: ✅ ChM-HASH matches")
-        return True
-    else:
-        print(f"{path}: ❌ Hash mismatch")
-        print(f"  Claimed:  {claimed}")
-        print(f"  Computed: {computed}")
-        return False
-
-if __name__ == "__main__":
-    ok = main(sys.argv[1])
-    sys.exit(0 if ok else 1)
-EOF
-
+        echo 'import hashlib' > source/verify/hash_check.py
+        echo 'import sys' >> source/verify/hash_check.py
+        echo '' >> source/verify/hash_check.py
+        echo 'def extract_claimed_hash(lines):' >> source/verify/hash_check.py
+        echo '    for line in lines:' >> source/verify/hash_check.py
+        echo '        if line.startswith("ChM-HASH:"):' >> source/verify/hash_check.py
+        echo '            return line.strip().split(":", 1)[1].strip()' >> source/verify/hash_check.py
+        echo '    return None' >> source/verify/hash_check.py
+        echo '' >> source/verify/hash_check.py
+        echo 'def remove_chm_hash_line(lines):' >> source/verify/hash_check.py
+        echo '    return [line for line in lines if not line.startswith("ChM-HASH:")]' >> source/verify/hash_check.py
+        echo '' >> source/verify/hash_check.py
+        echo 'def normalize_text(lines):' >> source/verify/hash_check.py
+        echo '    return "\\n".join([line.rstrip() for line in lines]).strip() + "\\n"' >> source/verify/hash_check.py
+        echo '' >> source/verify/hash_check.py
+        echo 'def main(path):' >> source/verify/hash_check.py
+        echo '    with open(path, "r") as f:' >> source/verify/hash_check.py
+        echo '        lines = f.readlines()' >> source/verify/hash_check.py
+        echo '' >> source/verify/hash_check.py
+        echo '    claimed = extract_claimed_hash(lines)' >> source/verify/hash_check.py
+        echo '    if not claimed:' >> source/verify/hash_check.py
+        echo '        print(f"{path}: ❌ No ChM-HASH found")' >> source/verify/hash_check.py
+        echo '        return False' >> source/verify/hash_check.py
+        echo '' >> source/verify/hash_check.py
+        echo '    content = normalize_text(remove_chm_hash_line(lines))' >> source/verify/hash_check.py
+        echo '    computed = hashlib.sha256(content.encode("utf-8")).hexdigest()' >> source/verify/hash_check.py
+        echo '' >> source/verify/hash_check.py
+        echo '    if claimed == computed:' >> source/verify/hash_check.py
+        echo '        print(f"{path}: ✅ ChM-HASH matches")' >> source/verify/hash_check.py
+        echo '        return True' >> source/verify/hash_check.py
+        echo '    else:' >> source/verify/hash_check.py
+        echo '        print(f"{path}: ❌ Hash mismatch")' >> source/verify/hash_check.py
+        echo '        print(f"  Claimed:  {claimed}")' >> source/verify/hash_check.py
+        echo '        print(f"  Computed: {computed}")' >> source/verify/hash_check.py
+        echo '        return False' >> source/verify/hash_check.py
+        echo '' >> source/verify/hash_check.py
+        echo 'if __name__ == "__main__":' >> source/verify/hash_check.py
+        echo '    ok = main(sys.argv[1])' >> source/verify/hash_check.py
+        echo '    sys.exit(0 if ok else 1)' >> source/verify/hash_check.py
