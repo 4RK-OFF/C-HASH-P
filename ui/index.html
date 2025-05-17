@@ -1,17 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ChP Verification Report</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>ChP-UI — Canonical Message Viewer</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>ChP Mirror Verification</h1>
-  <p>Parsed from <code>verify/verify-report.txt</code></p>
-  <div id="report-output">Loading report...</div>
+  <h1>UNIVERSE.DAO — Canonical Message Verifier</h1>
+
+  <label for="chmSelect">Select a message:</label>
+  <select id="chmSelect">
+    <option value="">— Choose ChM File —</option>
+  </select>
+
+  <div id="messageMeta" style="margin-top: 2em; display: none;">
+    <h2>Message Info</h2>
+    <pre id="metaOutput"></pre>
+
+    <h2>Quorum Verification</h2>
+    <pre id="quorumOutput">[Pending implementation]</pre>
+  </div>
 
   <script src="script.js"></script>
 </body>
 </html>
+
 
