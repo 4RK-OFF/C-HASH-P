@@ -27,7 +27,7 @@ function populateDropdown() {
 
 async function loadAndDisplayMetadata(filename) {
   try {
-    const content = await fetchText(`../messages/${filename}`);
+    const content = await fetchText(`messages/${filename}`);
     const lines = content.split("\n");
 
     let metadata = {
