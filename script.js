@@ -1,69 +1,82 @@
-const chmSelect = document.getElementById("chmSelect");
-const metaOutput = document.getElementById("metaOutput");
-const quorumOutput = document.getElementById("quorumOutput");
-const messageMeta = document.getElementById("messageMeta");
+const messagesPath = 'messages/';
+const signer = 'SIG3';
+const sigPath = `signers/${signer}/`;
 
-async function fetchText(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to load ${url}`);
-  return await res.text();
-}
+async function loadMessage(filename) {
+  const messageText = await fetch(`${messagesPath}${filename}`).then(res => res.text());
 
-// Load file list from messages/ using a hardcoded index (adjust as needed)
-const knownFiles = [
-  "ChM-1.txt",
-  "ChM-2.txt",
-  "ChM-42.txt"
-];
+  // Extract fields
+  const lines = messageText.split('\n');
+  const info = {
+    id: extractField(lines, 'ID'),
+    utc: extractField(lines, 'UTC'),
+    chmHash: extractField(lines, 'ChM-HASH'),
+    cHash: extractField(lines, 'C-HASH'),
+    vCheck: extractField(lines, 'V-CHECK'),
+    fullText: messageText
+  };
 
-function populateDropdown() {
-  for (const file of knownFiles) {
-    const opt = document.createElement("option");
-    opt.value = file;
-    opt.textContent = file;
-    chmSelect.appendChild(opt);
-  }
-}
+  // Compute SHA256 of full file content
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(messageText));
+  const computedHash = [...new Uint8Array(hashBuffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+  info.computedHash = computedHash;
 
-async function loadAndDisplayMetadata(filename) {
+  // Fetch SIG3 signature (if it exists)
   try {
-    const content = await fetchText(`messages/${filename}`);
-    const lines = content.split("\n");
-
-    let metadata = {
-      ID: "-",
-      UTC: "-",
-      "ChM-HASH": "-",
-      "C-HASH": "-",
-      "V-CHECK": "-"
-    };
-
-    for (const line of lines) {
-      if (line.startsWith("ID:")) metadata.ID = line.slice(3).trim();
-      else if (line.startsWith("UTC:")) metadata.UTC = line.slice(4).trim();
-      else if (line.startsWith("ChM-HASH:")) metadata["ChM-HASH"] = line.slice(9).trim();
-      else if (line.startsWith("C-HASH:")) metadata["C-HASH"] = line.slice(7).trim();
-      else if (line.startsWith("V-CHECK:")) metadata["V-CHECK"] = line.slice(8).trim();
-    }
-
-    metaOutput.textContent = Object.entries(metadata)
-      .map(([key, val]) => `${key}: ${val}`)
-      .join("\n");
-
-    quorumOutput.textContent = "🔧 Coming soon: verify SIG1, SIG2, SIG3…";
-
-    messageMeta.style.display = "block";
-
-  } catch (err) {
-    metaOutput.textContent = `❌ Failed to load: ${err.message}`;
-    quorumOutput.textContent = "";
-    messageMeta.style.display = "block";
+    const sig = await fetch(`${sigPath}${signer}-${filename}.sig`).then(res => res.text());
+    info.sig3 = sig.trim();
+    info.sig3Valid = sig.trim() === computedHash;
+  } catch {
+    info.sig3 = null;
+    info.sig3Valid = false;
   }
+
+  return info;
 }
 
-chmSelect.addEventListener("change", () => {
-  const selected = chmSelect.value;
-  if (selected) loadAndDisplayMetadata(selected);
-});
+function extractField(lines, key) {
+  const line = lines.find(l => l.startsWith(`${key}:`));
+  return line ? line.split(':').slice(1).join(':').trim() : null;
+}
 
-populateDropdown();
+async function updateUI(filename) {
+  const info = await loadMessage(filename);
+
+  const infoBox = document.getElementById('message-info');
+  infoBox.innerHTML = `
+    <pre>
+ID: ${info.id}
+UTC: ${info.utc}
+ChM-HASH: ${info.chmHash}
+C-HASH: ${info.cHash}
+V-CHECK: ${info.vCheck}
+FILE-HASH: ${info.computedHash}
+    </pre>
+  `;
+
+  const quorumBox = document.getElementById('quorum-info');
+  quorumBox.innerHTML = info.sig3
+    ? `✅ SIG3 signature: <code>${info.sig3}</code><br>✔️ Valid match: ${info.sig3Valid ? 'Yes ✅' : 'No ❌'}`
+    : `❌ SIG3 signature missing.`;
+}
+
+async function listMessages() {
+  const response = await fetch(messagesPath);
+  const text = await response.text();
+  const files = [...text.matchAll(/href="(ChM-[^"]+\.txt)"/g)].map(m => m[1]);
+
+  const select = document.getElementById('message-select');
+  files.forEach(file => {
+    const option = document.createElement('option');
+    option.value = file;
+    option.textContent = file;
+    select.appendChild(option);
+  });
+
+  select.addEventListener('change', () => {
+    if (select.value) updateUI(select.value);
+  });
+}
+
+listMessages();
