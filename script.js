@@ -62,9 +62,7 @@ FILE-HASH: ${info.computedHash}
 }
 
 async function listMessages() {
-  const response = await fetch(messagesPath);
-  const text = await response.text();
-  const files = [...text.matchAll(/href="(ChM-[^"]+\.txt)"/g)].map(m => m[1]);
+  const files = ["ChM-1.txt", "ChM-2.txt", "ChM-42.txt"]; // Hardcoded since GitHub Pages blocks directory listing
 
   const select = document.getElementById('message-select');
   files.forEach(file => {
