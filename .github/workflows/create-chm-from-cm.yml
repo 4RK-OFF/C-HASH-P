@@ -1,4 +1,4 @@
-name: Create Canonical Message from CM Draft
+name: ChM-CHECK
 
 on:
   workflow_dispatch:
